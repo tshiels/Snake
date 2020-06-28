@@ -78,7 +78,7 @@ unsigned short readController()
 	return data;
 }
 
-unsigned short game_over(unsigned short *dir, point *snake, unsigned char snake_sz, unsigned short *score)
+unsigned short game_over(unsigned short *dir, point *snake, unsigned short *snake_sz, unsigned short *score)
 {
 	glcd_clear_buffer();
 	glcd_tiny_draw_string(15,1,"GAME OVER");
@@ -90,15 +90,8 @@ unsigned short game_over(unsigned short *dir, point *snake, unsigned char snake_
 	glcd_tiny_draw_string(10, 5, "Play Again?");
 	glcd_write();
 	
-	//char string[15] = "";
-	//glcd_clear_buffer();
-	//sprintf(string, "%d %d %d %d %d", snake[0].x, snake[1].x, snake[2].x, snake[3].x, snake[4].x);
-	//glcd_tiny_draw_string(10, 0, string);
-	//glcd_write();
-	
 	unsigned short input = 0;
 	unsigned short count = 0;
-	//char cnt_string[4] = "";
 	while (1)
 	{
 		input = readController();
@@ -107,15 +100,13 @@ unsigned short game_over(unsigned short *dir, point *snake, unsigned char snake_
 		{
 			*dir = 512;
 			*score = 0;
-			for (unsigned char i = 0; i < snake_sz; ++i) {
+			*snake_sz = 5;
+			for (unsigned char i = 0; i < *snake_sz; ++i) {
 				snake[i].x = 42 - (2 * i);
 				snake[i].y = 24;
 			}
 			break;
 		}
-		//sprintf(cnt_string, "%d", count);
-		//glcd_tiny_draw_string(10, 5, cnt_string);
-		//glcd_write();
 		++count;
 	}
 	
@@ -191,6 +182,19 @@ unsigned char self_collision(point *snake, unsigned short size)
 	return 0;
 }
 
+void resize_snake(point *snake, unsigned short *arr_sz)
+{
+	*arr_sz *= 2;
+	snake = realloc(snake, *arr_sz * sizeof(point));
+	if (snake == NULL)	
+	{
+		free(snake);
+		glcd_tiny_draw_string(10, 3, "Error: (re)allocating memory");
+		glcd_write();
+	}
+	return;
+}
+
 int main(void)
 {
 	_delay_ms(100);
@@ -221,13 +225,17 @@ int main(void)
 	unsigned char edge = 0;
 	unsigned short score = 0;
 	unsigned short *score_ptr = &score;
-	unsigned short snake_sz = 15;
+	unsigned short snake_sz = 5;
+	unsigned short *snake_sz_ptr = &snake_sz;
+	unsigned short arr_sz = snake_sz * 2;
+	unsigned short *arr_sz_ptr = &arr_sz;
 	unsigned short count = 0;
 	_delay_ms(10);
 	
 
-	point snake[snake_sz];
-	memset(snake, 0, snake_sz * sizeof(point));
+	//point snake[arr_sz];
+	//memset(snake, 0, arr_sz * sizeof(point));
+	point *snake = malloc(arr_sz * sizeof(point));
 	for (unsigned short i = 0; i < snake_sz; ++i) {
 		//snake body elements will be 2px long, offset by 2px
 		snake[i].x = 42 - (2 * i);
@@ -258,7 +266,7 @@ int main(void)
 		
 		if (edge || self_collision(snake, snake_sz))
 		{
-			count = game_over(dir_ptr, snake, snake_sz, score_ptr);
+			count = game_over(dir_ptr, snake, snake_sz_ptr, score_ptr);
 			srand(count);
 			reset_fruit(fruitptr);
 			continue;
@@ -268,6 +276,12 @@ int main(void)
 		if ((snake[0].x == fruit.x) && (snake[0].y == fruit.y))
 		{
 			score++;
+			snake_sz++;
+			snake[snake_sz - 1] = snake[snake_sz - 2];
+			if (snake_sz == arr_sz)
+			{
+				resize_snake(snake, arr_sz_ptr);
+			}
 			reset_fruit(fruitptr);
 		}
 		

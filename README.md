@@ -16,8 +16,8 @@ Link to video demo (old): https://www.youtube.com/watch?v=wDqO1QHvHE4&t=1s
 - Fruit location is randomized by using user input as seed value.
 - Score is kept and displayed at end of each game. 
 - Self-collision
+- Snake grows as it collects fruit, with size of array dynamically increasing
 
 <strong>Features In-Progress:</strong>
 
-- Growing snake
 - High-score saved permanently in EEPROM. 
