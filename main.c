@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "timer.h"
 #include "glcd.h"
 #include "fonts/font5x7.h"
 #include "fonts/Liberation_Sans17x17_Alpha.h"
@@ -217,8 +216,6 @@ int main(void)
 	_delay_ms(15);
 
 	// Game Initialization
-	TimerSet(1000);
-	TimerOn();
 	unsigned short data = 0;
 	unsigned short dir = 512;
 	unsigned short *dir_ptr = &dir;
@@ -292,6 +289,7 @@ int main(void)
 			glcd_fill_rect(snake[i].x, snake[i].y, 2, 2, BLACK);
 		}
 		
+		glcd_draw_rect(0, 0, 84, 48, BLACK);
 		glcd_write();
 		_delay_ms(60);
 		glcd_clear_buffer();
