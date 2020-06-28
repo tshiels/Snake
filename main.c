@@ -6,281 +6,68 @@
  */ 
 
 #include <avr/io.h>
-#define F_CPU 8000000UL
+//#define F_CPU 8000000UL
 #include <util/delay.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "timer.h"
 #include "glcd.h"
 #include "fonts/font5x7.h"
-#include <avr/eeprom.h>
-#include <stdlib.h>
+#include "fonts/Liberation_Sans17x17_Alpha.h"
 
-
-//Prototypes
-unsigned short readController(void);
-void restart(unsigned char *, unsigned char *, unsigned char *, unsigned char *);
-
-//globals
-uint8_t high_score;
-uint8_t score = 0;
-unsigned char fruit_x;
-unsigned char fruit_y;
-
-typedef struct
+typedef struct  
 {
 	unsigned char x;
-	unsigned char y;
+	unsigned char y; 
 } point;
 
-/*
-void align_corners(unsigned char * x_h, unsigned char * y_h, unsigned char * x_t, unsigned char * y_t, point corner[], unsigned char * num_corners)
-{
-	if (abs(*x_h - corner[*num_corners - 1].x) > abs(*y_h - corner[*num_corners - 1].y)) //find direction of last corner relative to head
-	{
-		//then is horizontal
-		if (*y_h != corner[*num_corners - 1].y)
-		{
-			//then is not perfectly horizontal
-			//set equal to head's y position
-			corner[*num_corners - 1].y = *y_h;
-		}
-	}
-	else if (*x_h != corner[*num_corners - 1].x) //vertical and x-coord do not match
-	{
-		corner[*num_corners - 1].x = *x_h;
-	}
-	for (unsigned char i = *num_corners - 1; i > 0; i -=1)
-	{
-		if (abs(corner[i].x - corner[i - 1].x) > abs(corner[i].y - corner[i - 1].y)) //then horizontal
-		{
-			if (corner[i].y != corner[i - 1].y)
-			{
-				corner[i - 1].y = corner[i].y;
-			}
-		}
-		else if (corner[i].x != corner[i - 1].x) //else if vertical and x's don't match
-		{
-			corner[i - 1].x = corner[i].x ;
-		}
-	}
-	if (abs(*x_t - corner[0].x) > abs(*y_t - corner[0].y)) //find direction of last corner relative to tail
-	{
-		//then is horizontal
-		if (*y_t != corner[0].y)
-		{
-			//then is not perfectly horizontal
-			//set equal to head's y position
-			corner[0].y = *y_t;
-		}
-	}
-	else if (*x_t != corner[0].x) //vertical and x-coord do not match
-	{
-		corner[0].x = *x_t;
-	}
-}
-*/
-unsigned char move_point(unsigned short data, unsigned char *x, unsigned char *y, unsigned char *x_tail, unsigned char *y_tail,
-	point corner[], unsigned char * num_corners)
+unsigned char move_point(unsigned short direction, point *snake, unsigned char snake_sz)
 {
 	unsigned char edge = 0;
+	point old_head = snake[0];
 	
-	if (data == 0x0080) //UP
+	//shift all points down one, starting with the head at snake[0]
+	for (unsigned char i = snake_sz - 1; i > 0; i--) 
 	{
-		if (*y > 9) //y < 48 before
-		{
-			*y -= 1;
-			if (*x_tail < corner[0].x)
-			{
-				*x_tail +=1;
-			}
-			else if (*x_tail > corner[0].x)
-			{
-				*x_tail -= 1;
-			}
-			else if (*y_tail < corner[0].y)
-			{
-				*y_tail += 1;
-			}
-			else if (*y_tail > corner[0].y)
-			{
-				*y_tail -= 1;
-			}
-			else if ((*x_tail == corner[0].x) && (*y_tail == corner[0].y)) //delete first corner and shift all others down
-			{
-				*num_corners -= 1;
-				for (unsigned char i = 0; i < *num_corners - 1; i += 1)
-				{
-					corner[i] = corner[i + 1];
-				}
-			}
-		}
-		else
-		{
-			//game over
-			edge = 1;
-		}
-	}
-	else if (data == 0x0100) //DOWN;
-	{
-		if (*y < 48)
-		{
-			*y += 1;
-			if (*x_tail < corner[0].x)
-			{
-				*x_tail +=1;
-			}
-			else if (*x_tail > corner[0].x)
-			{
-				*x_tail -= 1;
-			}
-			else if (*y_tail < corner[0].y)
-			{
-				*y_tail += 1;
-			}
-			else if (*y_tail > corner[0].y)
-			{
-				*y_tail -= 1;
-			}
-			else if ((*x_tail == corner[0].x) && (*y_tail == corner[0].y)) //delete first corner and shift all others down
-			{
-				*num_corners -= 1;
-				for (unsigned char i = 0; i < *num_corners - 1; i += 1)
-				{
-					corner[i] = corner[i + 1];
-				}
-			}
-		}
-		else
-		{
-			//game over
-			edge = 1;
-		}
-	}
-	else if (data == 0x0200) //LEFT
-	{
-		if (*x > 0)
-		{
-			*x -= 1;
-			if (*x_tail < corner[0].x)
-			{
-				*x_tail +=1;
-			}
-			else if (*x_tail > corner[0].x)
-			{
-				*x_tail -= 1;
-			}
-			else if (*y_tail < corner[0].y)
-			{
-				*y_tail += 1;
-			}
-			else if (*y_tail > corner[0].y)
-			{
-				*y_tail -= 1;
-			}
-			else if ((*x_tail == corner[0].x) && (*y_tail == corner[0].y)) //delete first corner and shift all others down
-			{
-				*num_corners -= 1;
-				for (unsigned char i = 0; i < *num_corners - 1; i += 1)
-				{
-					corner[i] = corner[i + 1];
-				}
-			}
-		}
-		else
-		{
-			//game over
-			edge = 1;
-		}
-	}
-	else if (data == 0x0400) //RIGHT
-	{
-		if (*x < 84)
-		{
-			*x += 1;
-			if (*x_tail < corner[0].x)
-			{
-				*x_tail +=1;
-			}
-			else if (*x_tail > corner[0].x)
-			{
-				*x_tail -= 1;
-			}
-			else if (*y_tail < corner[0].y)
-			{
-				*y_tail += 1;
-			}
-			else if (*y_tail > corner[0].y)
-			{
-				*y_tail -= 1;
-			}
-			else if ((*x_tail == corner[0].x) && (*y_tail == corner[0].y)) //delete first corner and shift all others down
-			{
-				*num_corners -= 1;
-				for (unsigned char i = 0; i < *num_corners - 1; i += 1)
-				{
-					corner[i] = corner[i + 1];
-				}
-			}
-		}
-		else
-		{
-			//game over
-			edge = 1;
-		}
+		snake[i] = snake[i - 1];
 	}
 	
+	if (direction == 64) //up
+	{
+		old_head.y > 0 ? old_head.y -= 2 : (edge = 1);
+	}
+	else if (direction == 128) //down
+	{
+		old_head.y < 46 ? old_head.y += 2 : (edge = 1);
+	}
+	else if (direction == 256) //left
+	{
+		old_head.x > 0 ? old_head.x -= 2 : (edge = 1);
+	}
+	else if (direction == 512) //right
+	{
+		old_head.x < 82 ? old_head.x += 2 : (edge = 1);
+	}
+	
+	snake[0] = old_head;
 	return edge;
-}
-
-void restart(unsigned char * x_h, unsigned char * y_h, unsigned char * x_t, unsigned char * y_t)
-{
-	while (1)
-	{
-		unsigned short temp2 = 0;
-		temp2 = readController();
-		_delay_ms(50);
-		if (temp2 == 64)
-		{
-			if (score > high_score)
-			{
-				eeprom_update_byte((uint8_t*)46, score);
-			}
-			score = 0;
-			fruit_x = (rand() % 80) + 4;
-			fruit_y = (rand() % 25) + 9;
-			*x_h = 42;
-			*y_h = 24;
-			*x_t = 38;
-			*y_t = 24;
-			break;
-		}
-	}
-}
-
-void game_over(unsigned char * x_h, unsigned char * y_h, unsigned char * x_t, unsigned char * y_t)
-{
-	glcd_clear_buffer();
-	glcd_tiny_draw_string(15,2,"GAME OVER");
-	glcd_write();
-	_delay_ms(1000);
-	glcd_tiny_draw_string(15, 3, "Restart?");
-	glcd_write();
-	_delay_ms(15);
-	restart(x_h,y_h,x_t,y_t);
 }
 
 unsigned short readController()
 {
 	unsigned short data = 0x0000;
 
+	//pull latch to read new data
 	PORTA |= 0x01; // latch HIGH
 	_delay_us(12); // delay 12 us
 	PORTA &= 0xFE; // latch LOW
 	data |= ~PINA & 0x04; //read data falling edge
-	data = data << 1; //shift first bit
+	//data = data << 1; //shift bit
 	_delay_us(6);
 
 	//read bits
-	for(int i = 1; i < 13; i++)
+	for(int i = 0; i < 13; i++)
 	{
 		PORTA |= 0x02; //set clock HIGH
 		PORTA &= 0xFD; //set clock LOW
@@ -291,140 +78,204 @@ unsigned short readController()
 	return data;
 }
 
-int main(void)
+unsigned short game_over(unsigned short *dir, point *snake, unsigned char snake_sz, unsigned short *score)
 {
-	//SNES controller initialization
-	DDRA = 0x03; PORTA = 0x00;
-	DDRC = 0x01; PORTC = 0x00;
-
-	//load high score from EEPROM
-	high_score = eeprom_read_byte((uint8_t*)46);
-	if (high_score == 0xFF)
-	{
-		high_score = 0;
-	}
-
-	//game initialization
-	point snake_head = {.x = 42, .y = 24};
-	point snake_tail = {.x = 38, .y = 24};
-	point snake_body[25] = {0};
-	unsigned char num_corners = 0;
-	unsigned char * num_c_ptr = &num_corners;
-	unsigned short data = 0;
-	unsigned short dir = 0x0400;
-	char string[16] = "";
-	char string2[16] = "";
-	unsigned short menu_start = 0;
-	fruit_x = (rand() % 80) + 4;
-	fruit_y = (rand() % 25) + 9;
-	unsigned char * x_ptr = &snake_head.x;
-	unsigned char * y_ptr = &snake_head.y; 
-	unsigned char * x_t_ptr = &snake_tail.x;
-	unsigned char * y_t_ptr = &snake_tail.y;
-	unsigned char edge = 0;
-	uint8_t random_seed = eeprom_read_byte((uint8_t*)20);
-	random_seed += 1;
-	eeprom_update_byte((uint8_t*)20, random_seed);
-	srand(random_seed);
-
-	//lcd initialization
-	glcd_init();
-	glcd_set_contrast(50);
-	glcd_tiny_set_font(Font5x7,5,7,32,127);
 	glcd_clear_buffer();
-	glcd_tiny_draw_string(30,2,"SNAKE");
-	glcd_tiny_draw_string(10,3,"Press Start");
+	glcd_tiny_draw_string(15,1,"GAME OVER");
+	char score_string[13];
+	sprintf(score_string, "SCORE: %d", *score);
+	glcd_tiny_draw_string(15, 3, score_string);
 	glcd_write();
-	_delay_ms(15);
+	_delay_ms(500);
+	glcd_tiny_draw_string(10, 5, "Play Again?");
+	glcd_write();
+	
+	//char string[15] = "";
+	//glcd_clear_buffer();
+	//sprintf(string, "%d %d %d %d %d", snake[0].x, snake[1].x, snake[2].x, snake[3].x, snake[4].x);
+	//glcd_tiny_draw_string(10, 0, string);
+	//glcd_write();
+	
+	unsigned short input = 0;
+	unsigned short count = 0;
+	//char cnt_string[4] = "";
+	while (1)
+	{
+		input = readController();
+		_delay_us(500);
+		if (input == 32)
+		{
+			*dir = 512;
+			*score = 0;
+			for (unsigned char i = 0; i < snake_sz; ++i) {
+				snake[i].x = 42 - (2 * i);
+				snake[i].y = 24;
+			}
+			break;
+		}
+		//sprintf(cnt_string, "%d", count);
+		//glcd_tiny_draw_string(10, 5, cnt_string);
+		//glcd_write();
+		++count;
+	}
+	
+	return count;
+}
 
+unsigned char valid_dir(unsigned short data, unsigned short dir)
+{
+	// Cannot go in opposite direction of current direction
+	if ((data == 64  && dir != 128) || 
+		(data == 128 && dir != 64)  || 
+		(data == 256 && dir != 512) || 
+		(data == 512 && dir != 256))
+	{
+		return 1;		 
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void reset_fruit(point *fruit)
+{
+	fruit->x = (rand() % 82) - 1;
+	fruit->y = (rand() % 46) - 1;
+	if (fruit->x % 2) fruit->x++;
+	if (fruit->y % 2) fruit->y++;
+}
+
+unsigned short start_menu()
+{
+	unsigned char menu_start = 0;
+	unsigned short count = 0;
 	while (1)
 	{
 		menu_start = readController();
-		_delay_ms(50);
-		if (menu_start == 64)
+		_delay_us(500);
+		//glcd_clear_buffer();
+		//sprintf(string, "%d %d %d %d %d", snake[0].x, snake[1].x, snake[2].x, snake[3].x, snake[4].x);
+		//glcd_tiny_draw_string(10, 0, string);
+		//glcd_write();
+		
+		if (count < 100)
+		{
+			glcd_tiny_draw_string(10, 3,"Press Start");
+
+		}
+		else if (count < 200)
+		{
+			glcd_tiny_draw_string(10, 3,"           ");
+		}
+		else
+		{
+			count = 0;
+		}
+		
+		glcd_write();
+		++count;
+		if (menu_start == 32)
 		{
 			break;
 		}
 	}
+	return count;
+}
 
+int main(void)
+{
+	_delay_ms(100);
+	//SNES controller initialization
+	DDRA = 0x03; PORTA = 0x00;
+	DDRC = 0x01; PORTC = 0x00;
+	//char string[8] = "";
+	
+	// LCD Init
+	glcd_init();
+	glcd_set_contrast(65);
+	glcd_clear_buffer();
+	glcd_set_font(Liberation_Sans17x17_Alpha, 17, 17, 65, 91);
+	glcd_draw_string_xy(7, 7, "SNAKE");
+	glcd_write();
+	_delay_ms(500);
+	glcd_tiny_set_font(Font5x7,5,7,32,127);
+	glcd_tiny_draw_string(10, 3,"Press Start");
+	glcd_write();
+	_delay_ms(15);
+
+	// Game Initialization
+	TimerSet(1000);
+	TimerOn();
+	unsigned short data = 0;
+	unsigned short dir = 512;
+	unsigned short *dir_ptr = &dir;
+	unsigned char edge = 0;
+	//unsigned short menu_start = 0;
+	unsigned short score = 0;
+	unsigned short *score_ptr = &score;
+	unsigned char snake_sz = 15;
+	unsigned short count = 0;
+	_delay_ms(10);
+	
+
+	point snake[snake_sz];
+	memset(snake, 0, snake_sz * sizeof(point));
+	for (unsigned char i = 0; i < snake_sz; ++i) {
+		//snake body elements will be 2px long, offset by 2px
+		snake[i].x = 42 - (2 * i);
+		snake[i].y = 24;
+	}
+
+	count = start_menu();
+	
+	srand(count);
+	point fruit;
+	point *fruitptr = &fruit;
+	reset_fruit(fruitptr);
+	
     while (1) 
-    {	
-		
+    {
 		data = readController();
-		if (data == 64) //pressed start
+		if (valid_dir(data, dir))
 		{
-			snake_head.x = 42;
-			snake_head.y = 24;
-			snake_tail.x = 38;
-			snake_tail.y = 24;
-			for (unsigned char i = 0; i < num_corners; i += 1)
-			{
-				snake_body[i].x = 0;
-				snake_body[i].y = 0;
-			}
-			restart(x_ptr,y_ptr,x_t_ptr,y_t_ptr);
-		}
-		else if (data)
-		{
-			num_corners += 1;
-			edge = move_point(data, x_ptr, y_ptr, x_t_ptr, y_t_ptr, snake_body, num_c_ptr); //if data != 0, move in direction of data and hold
-			snake_body[num_corners - 1].x = snake_head.x; //add corner to array of corners
-			snake_body[num_corners - 1].y = snake_head.y;
+			edge = move_point(data, snake, snake_sz);
+			_delay_ms(20);
 			dir = data;
 		}
 		else
 		{
-			edge = move_point(dir,x_ptr,y_ptr, x_t_ptr, y_t_ptr, snake_body, num_c_ptr); //if data == 0, use previous directions
+			edge = move_point(dir, snake, snake_sz);
+			_delay_ms(20);
 		}
-
-		if ((fruit_x == snake_head.x) && (fruit_y == snake_head.y)) //if fruit eaten
-		{
-			score += 1;
-			fruit_x = (rand() % 80) + 4;
-			fruit_y = rand() % 30 + 9;
-		}
-
+		
 		if (edge)
 		{
-			snake_head.x = 42;
-			snake_head.y = 24;
-			snake_tail.x = 38;
-			snake_tail.y = 24;
-			for (unsigned char i = 0; i < num_corners; i += 1)
-			{
-				snake_body[i].x = 0;
-				snake_body[i].y = 0;
-			}
-			game_over(x_ptr, y_ptr, x_t_ptr, y_t_ptr);
+			count = game_over(dir_ptr, snake, snake_sz, score_ptr);
+			srand(count);
+			reset_fruit(fruitptr);
+			continue;
 		}
-
-		if (score > high_score)
+		
+		if ((snake[0].x == fruit.x) && (snake[0].y == fruit.y))
 		{
-			high_score = score;
-			eeprom_update_byte((uint8_t*)46, high_score);
+			score++;
+			reset_fruit(fruitptr);
 		}
-
-		//draw scores and bounding line
-		glcd_clear_buffer();
-		sprintf(string, "%d", score);
-		sprintf(string2, " hi: %d", high_score);
-		glcd_tiny_draw_string(0,0,string);
-		glcd_tiny_draw_string(30, 0, string2);
-		glcd_draw_line(0, 9, 84, 9, BLACK); 
-
-		//draw fruit and snake
-		glcd_set_pixel(fruit_x,fruit_y, BLACK);
-		//check to make sure corners, head and tail align
-		//align_corners(x_ptr,y_ptr,x_t_ptr,y_t_ptr,snake_body, num_c_ptr);
-		glcd_draw_line(snake_tail.x, snake_tail.y, snake_body[0].x, snake_body[0].y, BLACK);
-		for (unsigned char i = 0; i < num_corners; i += 1)
+		
+		glcd_fill_rect(fruit.x, fruit.y, 2, 2, BLACK);
+		//sprintf(string, "%d", data);
+		//glcd_tiny_draw_string(0,0, string);
+		for (unsigned char i = 0; i < snake_sz; ++i)
 		{
-			glcd_draw_line(snake_body[i].x, snake_body[i].y, snake_body[i + 1].x, snake_body[i + 1].y, BLACK);
+			glcd_fill_rect(snake[i].x, snake[i].y, 2, 2, BLACK);
 		}
-		glcd_draw_line(snake_body[num_corners - 1].x, snake_body[num_corners - 1].y, snake_head.x, snake_head.y, BLACK);
-
+		//glcd_fill_rect(x, y, 1, 1, BLACK);
+		//sprintf(string, "%d %d %d %d %d", snake[0].x, snake[1].x, snake[2].x, snake[3].x, snake[4].x);
 		glcd_write();
 		_delay_ms(60);
+		glcd_clear_buffer();
     }
+	
 }
 
