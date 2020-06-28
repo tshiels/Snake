@@ -14,8 +14,11 @@ Link to video demo (old): https://www.youtube.com/watch?v=wDqO1QHvHE4&t=1s
 Working features:
 
 - Snake can maneuver around the screen and collect fruit
+- Fruit location is randomized by using user input as seed value.
+- Score is kept and displayed at end of each game. 
 
-Known Bugs:
+Features In-Progress:
 
-- No self-collision
-- Snake does not grow when collecting fruit
+- Self-collision
+- Growing snake
+- High-score saved permanently in EEPROM. 
