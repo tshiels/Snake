@@ -154,17 +154,13 @@ unsigned short start_menu()
 	{
 		menu_start = readController();
 		_delay_us(500);
-		//glcd_clear_buffer();
-		//sprintf(string, "%d %d %d %d %d", snake[0].x, snake[1].x, snake[2].x, snake[3].x, snake[4].x);
-		//glcd_tiny_draw_string(10, 0, string);
-		//glcd_write();
 		
-		if (count < 100)
+		if (count < 250)
 		{
 			glcd_tiny_draw_string(10, 3,"Press Start");
 
 		}
-		else if (count < 200)
+		else if (count < 500)
 		{
 			glcd_tiny_draw_string(10, 3,"           ");
 		}
