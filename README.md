@@ -11,14 +11,13 @@ Programmed on ATmega1284 microcontroller with ATmel Studio.
 
 Link to video demo (old): https://www.youtube.com/watch?v=wDqO1QHvHE4&t=1s
 
-Working features:
-
+<strong>Working features:</strong>
 - Snake can maneuver around the screen and collect fruit
 - Fruit location is randomized by using user input as seed value.
 - Score is kept and displayed at end of each game. 
 - Self-collision
 
-Features In-Progress:
+<strong>Features In-Progress:</strong>
 
 - Growing snake
 - High-score saved permanently in EEPROM. 
