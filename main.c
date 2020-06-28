@@ -179,6 +179,18 @@ unsigned short start_menu()
 	return count;
 }
 
+unsigned char self_collision(point *snake, unsigned short size)
+{
+	for (unsigned short i = 1; i < size; ++i)
+	{
+		if ((snake[0].x == snake[i].x) && (snake[0].y == snake[i].y))
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int main(void)
 {
 	_delay_ms(100);
@@ -207,17 +219,16 @@ int main(void)
 	unsigned short dir = 512;
 	unsigned short *dir_ptr = &dir;
 	unsigned char edge = 0;
-	//unsigned short menu_start = 0;
 	unsigned short score = 0;
 	unsigned short *score_ptr = &score;
-	unsigned char snake_sz = 15;
+	unsigned short snake_sz = 15;
 	unsigned short count = 0;
 	_delay_ms(10);
 	
 
 	point snake[snake_sz];
 	memset(snake, 0, snake_sz * sizeof(point));
-	for (unsigned char i = 0; i < snake_sz; ++i) {
+	for (unsigned short i = 0; i < snake_sz; ++i) {
 		//snake body elements will be 2px long, offset by 2px
 		snake[i].x = 42 - (2 * i);
 		snake[i].y = 24;
@@ -245,13 +256,14 @@ int main(void)
 			_delay_ms(20);
 		}
 		
-		if (edge)
+		if (edge || self_collision(snake, snake_sz))
 		{
 			count = game_over(dir_ptr, snake, snake_sz, score_ptr);
 			srand(count);
 			reset_fruit(fruitptr);
 			continue;
 		}
+		
 		
 		if ((snake[0].x == fruit.x) && (snake[0].y == fruit.y))
 		{
@@ -260,14 +272,12 @@ int main(void)
 		}
 		
 		glcd_fill_rect(fruit.x, fruit.y, 2, 2, BLACK);
-		//sprintf(string, "%d", data);
-		//glcd_tiny_draw_string(0,0, string);
+		
 		for (unsigned char i = 0; i < snake_sz; ++i)
 		{
 			glcd_fill_rect(snake[i].x, snake[i].y, 2, 2, BLACK);
 		}
-		//glcd_fill_rect(x, y, 1, 1, BLACK);
-		//sprintf(string, "%d %d %d %d %d", snake[0].x, snake[1].x, snake[2].x, snake[3].x, snake[4].x);
+		
 		glcd_write();
 		_delay_ms(60);
 		glcd_clear_buffer();
