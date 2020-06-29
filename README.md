@@ -1,7 +1,7 @@
 # Snake
 Snake game written in Embedded-C
 
-<h3>UPDATED June 2020:</h3>
+<h3><strong>UPDATED</strong> June 2020:</h3>
 <p align="center"><strong>Current Working Version</strong></p>
 <p align="center">
   <img src="snake_demo.gif" >
