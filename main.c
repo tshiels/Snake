@@ -38,7 +38,7 @@ unsigned char move_point(unsigned short direction, point *snake, unsigned char s
 	}
 	else if (direction == 128) //down
 	{
-		old_head.y < 46 ? old_head.y += 2 : (edge = 1);
+		old_head.y < 47 ? old_head.y += 2 : (edge = 1);
 	}
 	else if (direction == 256) //left
 	{
@@ -46,7 +46,12 @@ unsigned char move_point(unsigned short direction, point *snake, unsigned char s
 	}
 	else if (direction == 512) //right
 	{
-		old_head.x < 82 ? old_head.x += 2 : (edge = 1);
+		old_head.x < 83 ? old_head.x += 2 : (edge = 1);
+	}
+	
+	if (old_head.x >= 83 || old_head.y >= 47)
+	{
+		edge = 1;
 	}
 	
 	snake[0] = old_head;
@@ -130,10 +135,10 @@ unsigned char valid_dir(unsigned short data, unsigned short dir)
 
 void reset_fruit(point *fruit)
 {
-	fruit->x = (rand() % 82) - 1;
-	fruit->y = (rand() % 46) - 1;
-	if (fruit->x % 2) fruit->x++;
-	if (fruit->y % 2) fruit->y++;
+	fruit->x = (rand() % 81) + 2;
+	fruit->y = (rand() % 44) + 2;
+	if (fruit->x % 2) fruit->x--;
+	if (fruit->y % 2) fruit->y--;
 }
 
 unsigned short start_menu()
@@ -249,16 +254,17 @@ int main(void)
     while (1) 
     {
 		data = readController();
+		_delay_ms(20);
 		if (valid_dir(data, dir))
 		{
 			edge = move_point(data, snake, snake_sz);
-			_delay_ms(20);
+			//_delay_ms(20);
 			dir = data;
 		}
 		else
 		{
 			edge = move_point(dir, snake, snake_sz);
-			_delay_ms(20);
+			//_delay_ms(20);
 		}
 		
 		if (edge || self_collision(snake, snake_sz))
@@ -282,7 +288,7 @@ int main(void)
 			reset_fruit(fruitptr);
 		}
 		
-		glcd_fill_rect(fruit.x, fruit.y, 2, 2, BLACK);
+		glcd_draw_circle(fruit.x, fruit.y, 1, BLACK);
 		
 		for (unsigned char i = 0; i < snake_sz; ++i)
 		{
