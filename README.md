@@ -1,13 +1,13 @@
 # Snake
-Snake game written in Embedded-C
+Snake game written in Embedded-C. Programmed on ATmega1284 microcontroller with ATmel Studio. 
+Utilized Nokia 5110 LCD for graphics and Super Nintendo controller for user input. 
+I used the AVR graphics library by Andy Gock https://andygock.github.io/glcd-documentation/
 
 <h3><strong>UPDATED</strong> June 2020:</h3>
 <p align="center"><strong>Current Working Version</strong></p>
 <p align="center">
   <img src="snake_demo.gif" >
 </p>
-
-Programmed on ATmega1284 microcontroller with ATmel Studio.
 
 Link to video demo: https://youtu.be/07_hWhRFD4I
 
