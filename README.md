@@ -19,7 +19,7 @@ Link to video demo: https://youtu.be/07_hWhRFD4I
 - Snake grows as it collects fruit, with size of array dynamically increasing
 
 <strong>Recent Fixes:</strong>
-- Fixed border issue where if direction changed right as snake reached border, the game would only check against the borders in the new direction, allowing the snake to ride on the original border 
+- Fixed border issue where if direction changed right as snake reached border, the game would only check against the borders in the new direction, allowing the snake to move past the original border.
 - Fruits no longer appear on the border
 
 <strong>Known Bugs:</strong>
