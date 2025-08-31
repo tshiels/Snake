@@ -9,7 +9,7 @@ I used the AVR graphics library by Andy Gock https://andygock.github.io/glcd-doc
   <img src="snake_demo.gif" >
 </p>
 
-Link to video demo: [https://youtu.be/07_hWhRFD4I](https://youtu.be/i7S3CVRkeVw)
+[LINK TO VIDEO DEMO](https://youtu.be/i7S3CVRkeVw)
 
 <strong>Working features:</strong>
 - Snake can maneuver around the screen and collect fruit
